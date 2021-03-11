@@ -1,0 +1,23 @@
+{
+  "name": "sweepline_demonstrator",
+  "version": "1.0.0",
+  "description": "This package demonstrates the voronoi sweepline algorithm.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/somestudentcoder/sweepline_demonstrator.git"
+  },
+  "author": "Christopher Oser",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/somestudentcoder/sweepline_demonstrator/issues"
+  },
+  "homepage": "https://github.com/somestudentcoder/sweepline_demonstrator#readme",
+  "dependencies": {
+    "pixi.js": "^6.0.0",
+    "typescript": "^4.2.3"
+  }
+}
