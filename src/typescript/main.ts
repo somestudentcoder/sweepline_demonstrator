@@ -22,6 +22,8 @@ var siteEvents = [];
 var circleEvents = [];
 var beachLine = null;
 
+var edges = [];
+var halfedges = [];
 var regions = [];
 
 
@@ -33,6 +35,13 @@ ctx.strokeRect(0, 0, width, height);
 
 var pointList = [];
 
+//DEBUG FUNCTION
+function printList()
+{
+    console.log(pointList);
+}
+
+//ADDING A NEW POINT
 function newPoint(x, y)
 {
     if(clicked)
@@ -48,21 +57,6 @@ function newPoint(x, y)
     pointList.push(new Point(x,y));
 }
 
-function printList()
-{
-    console.log(pointList);
-}
-
-function drawPoints()
-{
-    pointList.forEach(point => {
-        ctx.fillStyle = 'rgb(0, 0, 0)';
-        ctx.beginPath();
-        ctx.arc(point.X, point.Y, 3.5, 0, 360, false);
-        ctx.fill();
-    });
-}
-
 function handleSite(site: Point)
 {
     regions.push(new Region(site));
@@ -74,7 +68,7 @@ function addToBeachline(site: Point)
 {
     if(beachLine == null)
     {
-        beachLine = new TreeNode(site, null, null);    
+        beachLine = new TreeNode(site);    
     }
     else
     {
@@ -82,30 +76,468 @@ function addToBeachline(site: Point)
     }
 }
 
-function findSpotInTree(site: Point, currentNode: TreeNode)
+// adapted from https://github.com/gorhill/Javascript-Voronoi
+function leftBreakPoint(node, directrix) 
 {
-    if(currentNode.site.Y >= site.Y)
+    
+    var site = node.site,
+        rfocx = site.x,
+        rfocy = site.y,
+        pbx2 = rfocx-directrix;
+    // parabola in degenerate case where focus is on directrix
+    if (!pbx2)
     {
-        if(currentNode.left == null)
+        return rfocy;
+    }
+    var lArc = node.previous;
+    if (!lArc) 
+    {
+        return -Infinity;
+    }
+    site = lArc.site;
+    var lfocx = site.x,
+        lfocy = site.y,
+        plbx2 = lfocx-directrix;
+    // parabola in degenerate case where focus is on directrix
+    if (!plbx2) 
+    {
+        return lfocx;
+    }
+    var hl = lfocy-rfocy,
+        abx2 = 1/pbx2-1/plbx2,
+        b = hl/plbx2;
+    if (abx2) 
+    {
+        return (-b+Math.sqrt(b*b-2*abx2*(hl*hl/(-2*plbx2)-lfocy+plbx2/2+rfocy-pbx2/2)))/abx2+rfocx;
+    }
+    // both parabolas have same distance to directrix, thus break point is midway
+    return (rfocx+lfocx)/2;
+};
+
+// adapted from https://github.com/gorhill/Javascript-Voronoi
+function rightBreakPoint(node, directrix) 
+{
+    var rArc = node.next;
+    if (rArc) {
+        return this.leftBreakPoint(rArc, directrix);
+        }
+    var site = node.site;
+    return site.x === directrix ? site.y : Infinity;
+};
+
+//TREE LOGIC
+
+//ADAPTED FROM https://github.com/gorhill/Javascript-Voronoi
+function insertSuccessor(lArc: TreeNode, newArc: TreeNode)
+{
+    var parent;
+    if (lArc) {
+        // >>> rhill 2011-05-27: Performance: cache previous/next nodes
+        newArc.previous = lArc;
+        newArc.next = lArc.next;
+        if (lArc.next) 
         {
-            currentNode.left = new TreeNode(site, null, null);
+            lArc.next.previous = newArc;
+        }
+        lArc.next = newArc;
+        // <<<
+        if (lArc.right) 
+        {
+            // in-place expansion of lArc.right.getFirst();
+            lArc = lArc.right;
+            while (lArc.left) 
+            {
+                lArc = lArc.left;
+            }
+            lArc.left = newArc;
+        }
+        else 
+        {
+            lArc.right = newArc;
+        }
+        parent = lArc;
+    }
+    // rhill 2011-06-07: if lArc is null, newArc must be inserted
+    // to the left-most part of the tree
+    else if (beachLine) 
+    {
+        lArc = getFirst(beachLine);
+        // >>> Performance: cache previous/next nodes
+        newArc.previous = null;
+        newArc.next = lArc;
+        lArc.previous = newArc;
+        // <<<
+        lArc.left = newArc;
+        parent = lArc;
+    }
+    else 
+    {
+        // >>> Performance: cache previous/next nodes
+        newArc.previous = newArc.next = null;
+        // <<<
+        beachLine = newArc;
+        parent = null;
+    }
+    newArc.left = newArc.right = null;
+    newArc.parent = parent;
+    newArc.indicator = true;
+    // Fixup the modified tree by recoloring nodes and performing
+    // rotations (2 at most) hence the red-black tree properties are
+    // preserved.
+    var grandpa, uncle;
+    lArc = newArc;
+    while (parent && parent.indicator) {
+        grandpa = parent.parent;
+        if (parent === grandpa.left) {
+            uncle = grandpa.right;
+            if (uncle && uncle.indicator) {
+                parent.indicator = uncle.indicator = false;
+                grandpa.indicator = true;
+                lArc = grandpa;
+                }
+            else {
+                if (lArc === parent.right) {
+                    rotateLeft(parent);
+                    lArc = parent;
+                    parent = lArc.parent;
+                    }
+                parent.indicator = false;
+                grandpa.indicator = true;
+                rotateRight(grandpa);
+                }
+            }
+        else {
+            uncle = grandpa.left;
+            if (uncle && uncle.indicator) {
+                parent.indicator = uncle.indicator = false;
+                grandpa.indicator = true;
+                lArc = grandpa;
+                }
+            else {
+                if (lArc === parent.left) {
+                    rotateRight(parent);
+                    lArc = parent;
+                    parent = lArc.parent;
+                    }
+                parent.indicator = false;
+                grandpa.indicator = true;
+                rotateLeft(grandpa);
+                }
+            }
+        parent = lArc.parent;
+        }
+    beachLine.indicator = false;
+}
+
+function rotateLeft(node: TreeNode) 
+{
+    var p = node;
+    var q = node.right; // can't be null
+    var parent = p.parent;
+    
+    if (parent) 
+    {
+        if (parent.left === p) 
+        {
+            parent.left = q;
+        }
+        else 
+        {
+            parent.right = q;
+        }
+    }
+    else 
+    {
+        this.root = q;
+    }
+    q.parent = parent;
+    p.parent = q;
+    p.right = q.left;
+    if (p.right) 
+    {
+        p.right.parent = p;
+    }
+    q.left = p;
+}
+
+function rotateRight(node: TreeNode) 
+{
+    var p = node;
+    var q = node.left; // can't be null
+    var parent = p.parent;
+    if (parent) 
+    {
+        if (parent.left === p) 
+        {
+            parent.left = q;
+        }
+        else 
+        {
+            parent.right = q;
+        }
+    }
+    else 
+    {
+        this.root = q;
+    }
+    q.parent = parent;
+    p.parent = q;
+    p.left = q.right;
+    if (p.left) 
+    {
+        p.left.parent = p;
+    }
+    q.right = p;
+}
+
+function getFirst(node: TreeNode) 
+{
+    while (node.left) 
+    {
+        node = node.left;
+    }
+    return node;
+}
+
+function getLast(node: TreeNode) 
+{
+    while (node.right) 
+    {
+        node = node.right;
+    }
+    return node;
+}
+
+
+// adapted from https://github.com/gorhill/Javascript-Voronoi
+function findSpotInTree(site: Point, root: TreeNode)
+{
+    let directrix = site.X;
+    let site_y = site.Y;
+
+    var currentNode = root;
+    var lArc, rArc, lbp, rbp;
+
+    //finding left and right sections of new arc.
+    while(currentNode)
+    {
+        lbp = leftBreakPoint(currentNode, directrix);
+
+        if(lbp - site_y > 1e-9)
+        {
+            currentNode = currentNode.left;
         }
         else
         {
-            findSpotInTree(site, currentNode.left);
+            rbp = rightBreakPoint(currentNode, directrix);
+
+            if(rbp - site_y > 1e-9)
+            {
+                if(!currentNode.right)
+                {
+                    lArc = currentNode;
+                    break;
+                }
+                else
+                {
+                    currentNode = currentNode.right;
+                }
+            }
+            else
+            {
+                if(lbp - site_y > -1e-9)
+                {
+                    lArc = currentNode.previous;
+                    rArc = currentNode;
+                }
+                else if(rbp - site_y > 1e-9)
+                {
+                    lArc = currentNode;
+                    rArc = currentNode.next;
+                }
+                else
+                {
+                    lArc = rArc = currentNode;
+                }
+                break;
+            }
         }
     }
-    else if(currentNode.site.Y < site.Y)
+
+    //With the left arc found now, insert the new arc into the tree.
+    var newNode = new TreeNode(site);
+    insertSuccessor(lArc, newNode);
+
+    //first section
+    if (!lArc && !rArc) 
     {
-        if(currentNode.right == null)
+        return;
+    }
+
+    //splitting a previous arc
+    if (lArc === rArc) 
+    {
+        // invalidate circle event of split beach section
+        detachCircleEvent(lArc);
+
+        // split the beach section into two separate beach sections
+        rArc = new TreeNode(lArc.site);
+        insertSuccessor(newNode, rArc);
+
+        // since we have a new transition between two beach sections,
+        // a new edge is born
+        newNode.edge = rArc.edge = createEdge(lArc.site, newNode.site);
+
+        // check whether the left and right beach sections are collapsing
+        // and if so create circle events, to be notified when the point of
+        // collapse is reached.
+        attachCircleEvent(lArc);
+        attachCircleEvent(rArc);
+        return;
+    }
+
+    if (lArc && !rArc) 
+    {
+        newNode.edge = createEdge(lArc.site,newNode.site);
+        return;
+    }
+
+    if (lArc !== rArc) 
+    {
+        // invalidate circle events of left and right sites
+        detachCircleEvent(lArc);
+        detachCircleEvent(rArc);
+
+        // http://mathforum.org/library/drmath/view/55002.html
+        var lSite = lArc.site,
+            ax = lSite.x,
+            ay = lSite.y,
+            bx=site.X-ax,
+            by=site.X-ay,
+            rSite = rArc.site,
+            cx=rSite.x-ax,
+            cy=rSite.y-ay,
+            d=2*(bx*cy-by*cx),
+            hb=bx*bx+by*by,
+            hc=cx*cx+cy*cy,
+            vertex = new Point((cy*hb-by*hc)/d+ax, (bx*hc-cx*hb)/d+ay);
+
+        // one transition disappear
+        if(rArc.edge)
         {
-            currentNode.right = new TreeNode(site, null, null);
+            if(rArc.edge.lSite == rSite)
+            {
+                rArc.edge.end = vertex;
+            }
+            else
+            {
+                rArc.edge.start = vertex;
+            }
         }
         else
         {
-            findSpotInTree(site, currentNode.right);
+            rArc.edge = createEdge(lSite, rSite)
+            rArc.edge.start = vertex;
+        }
+
+        // two new transitions appear at the new vertex location
+        newNode.edge = createEdge(lSite, site);
+        newNode.edge.end = vertex;
+        rArc.edge = createEdge(site, rSite);
+        rArc.edge.end = vertex;
+
+        // check whether the left and right beach sections are collapsing
+        // and if so create circle events, to handle the point of collapse.
+        attachCircleEvent(lArc);
+        attachCircleEvent(rArc);
+        return;
+    }
+}
+
+function detachCircleEvent(node: TreeNode)
+{
+    var cEvent = node.circleEventObject;
+    if(cEvent)
+    {
+        const index = circleEvents.indexOf(cEvent, 0);
+        if (index > -1) 
+        {
+            circleEvents.splice(index, 1);
         }
     }
+}
+
+function attachCircleEvent(node: TreeNode)
+{
+    var lArc = node.previous;
+    var rArc = node.next;
+    if(!lArc || !rArc)
+    {
+        console.error("We're missing an arc");
+        return;
+    }
+    var lSite = lArc.site;
+    var cSite = node.site;
+    var rSite = rArc.site;
+
+    if (lSite===rSite) 
+    {
+        console.log("Left arc is Right arc.")
+        return;
+    }
+
+    var bx = cSite.X;
+    var by = cSite.X;
+    var ax = lSite.X-bx;
+    var ay = lSite.X-by;
+    var cx = rSite.X-bx;
+    var cy = rSite.X-by;
+
+    // http://en.wikipedia.org/wiki/Curve_orientation#Orientation_of_a_simple_polygon
+    // rhill 2011-05-21: Nasty finite precision error which caused circumcircle() to
+    // return infinites: 1e-12 seems to fix the problem.
+
+    var d = 2*(ax*cy-ay*cx);
+    if (d >= -2e-12)
+    {
+        console.log("d is off.")
+        return;
+    }
+
+    var ha = ax*ax+ay*ay;
+    var hc = cx*cx+cy*cy;
+    var x = (cy*ha-ay*hc)/d;
+    var y = (ax*hc-cx*ha)/d;
+    var ycenter = y+by;
+
+    var newCircleEvent = new CircleEvent(node,
+                                      cSite,
+                                      x+bx,
+                                      ycenter+this.sqrt(x*x+y*y),
+                                      ycenter);
+    node.circleEventObject = newCircleEvent;
+
+    //add event to queue
+    if(circleEvents.length == 0)
+    {
+        circleEvents.push(newCircleEvent);
+    }
+    else
+    {
+        let length = circleEvents.length;
+        for(var i = 0; i < length; i++)
+        {
+            if(circleEvents[i].location.X >= newCircleEvent.location.X)
+            {
+                circleEvents.splice(i, 0, newCircleEvent);
+            }
+        }
+        if(circleEvents.length == length)
+        {
+            circleEvents.push(newCircleEvent);
+        }
+    }
+    
 }
 
 function removeFromBeachline(site: Point)
@@ -223,21 +655,44 @@ function drawParabolas(node: TreeNode, lineX: number)
         return;
     }
 
-
-    drawParabola(node.site, lineX);
-    if(node.left != null)
+    let currentParabola = getFirst(node);
+    drawParabola(currentParabola.site, lineX);
+    if(currentParabola.next != null)
     {
-        drawParabolas(node.left, lineX);
-    }
-    if(node.right != null)
-    {
-        drawParabolas(node.right, lineX);
+        drawParabola(currentParabola.next.site, lineX);
     }
 }
 
+function drawPoints()
+{
+    pointList.forEach(point => {
+        ctx.fillStyle = 'rgb(0, 0, 0)';
+        ctx.beginPath();
+        ctx.arc(point.X, point.Y, 3.5, 0, 360, false);
+        ctx.fill();
+    });
+}
+
+
+//DATASTRUCTURE HANDLERS
+function createEdge(lsite: Point, rsite: Point)
+{
+    var edge = new Edge(lsite, rsite, null, null);
+
+    regions[regions.indexOf(lsite)].edges.push(edge);
+    regions[regions.indexOf(rsite)].edges.push(edge);
+
+    return edge;
+}
+
+function createHalfEdge(edge: Edge, lsite: Point, rsite: Point)
+{
+
+}
 
 //DATASTRUCTURES
-class Point{
+class Point
+{
     public X: number;
     public Y: number;
 
@@ -247,7 +702,8 @@ class Point{
     }
 }
 
-class Edge{
+class Edge
+{
     public left_site: Point;
     public right_site: Point;
 
@@ -262,7 +718,8 @@ class Edge{
     }
 }
 
-class Region{
+class Region
+{
     public site: Point;
     public edges: [Edge];
 
@@ -271,15 +728,37 @@ class Region{
     }
 }
 
-class TreeNode{
+class CircleEvent
+{
+    public node: TreeNode;
+    public centerSite: Point;
+    public location: Point;
+    public yCenter: number;
+
+    constructor(arc: TreeNode, site: Point, x: number, y: number, yC: number)
+    {
+        this.node = arc;
+        this.centerSite = site;
+        this.location = new Point(x, y);
+        this.yCenter = yC;
+    }
+}
+
+//Used to build Red/Black Tree
+class TreeNode
+{
     public site: Point;
     public left: TreeNode;
     public right: TreeNode;
+    public previous: TreeNode;
+    public next: TreeNode;
+    public parent: TreeNode;
+    public indicator: boolean;
+    public edge: Edge;
+    public circleEventObject: CircleEvent;
 
-    constructor(s: Point, l: TreeNode, r: TreeNode)
+    constructor(s: Point)
     {
         this.site = s;
-        this.left = l;
-        this.right = r;
     }
 }
