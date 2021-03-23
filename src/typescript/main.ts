@@ -440,6 +440,7 @@ function findSpotInTree(site: Point, root: TreeNode)
             rArc.edge.start = vertex;
         }
 
+
         // two new transitions appear at the new vertex location
         newNode.edge = createEdge(lSite, site);
         newNode.edge.end = vertex;
@@ -540,9 +541,95 @@ function attachCircleEvent(node: TreeNode)
     
 }
 
-function removeFromBeachline(site: Point)
+function removeFromBeachline(event: CircleEvent)
 {
+    var x = event.location.X
+    var y = event.location.Y
+    var previous = circleEvents[circleEvents.indexOf(event) - 1] 
+    var next = circleEvents[circleEvents.indexOf(event) + 1]
+    var disappearingTransitions = [event.node];
+    var vertex = new Point(x, event.yCenter)
 
+    detachBeachsection(event);
+
+    //left check
+    var lArc = previous.node
+    while(previous && Math.abs(x - previous.location.X) < 1e-9 && Math.abs(y - previous.yCenter) < 1e-9)
+    {
+        previous = circleEvents[circleEvents.indexOf(previous) - 1]
+        disappearingTransitions.unshift(lArc)
+        detachBeachsection(lArc)
+        lArc = previous.node
+    }
+
+    if(lArc)
+    {
+        disappearingTransitions.unshift(lArc);
+        detachCircleEvent(lArc);
+    }
+    
+
+    //right check
+    var rArc = next.node
+    while(next && Math.abs(x - next.location.X) < 1e-9 && Math.abs(y - next.yCenter) < 1e-9)
+    {
+        next = circleEvents[circleEvents.indexOf(next) + 1]
+        disappearingTransitions.push(rArc)
+        detachBeachsection(rArc)
+        rArc = next.node
+    }
+
+    if(rArc)
+    {
+        disappearingTransitions.push(rArc)
+        detachCircleEvent(rArc)
+    }
+
+    //go through disappearingTrans
+    var nArcs = disappearingTransitions.length
+    for (let iArc = 1; iArc < nArcs; iArc++) 
+    {
+        rArc = disappearingTransitions[iArc];
+        lArc = disappearingTransitions[iArc-1];
+
+        if(rArc.edge)
+        {
+            if(rArc.edge.lSite == rArc.site)
+            {
+                rArc.edge.end = vertex;
+            }
+            else
+            {
+                rArc.edge.start = vertex;
+            }
+        }
+        else
+        {
+            rArc.edge = createEdge(lArc.site, rArc.site)
+            rArc.edge.start = vertex;
+        }
+    }
+
+    lArc = disappearingTransitions[0]
+    rArc = disappearingTransitions[nArcs-1]
+    rArc.edge = createEdge(lArc.site, rArc.site)
+    rArc.edge.end = vertex
+
+    attachCircleEvent(lArc)
+    attachCircleEvent(rArc)
+}
+
+function detachBeachsection(event: CircleEvent)
+{
+    //baibai event
+    detachCircleEvent(event.node)
+
+    //delete from structure
+    let index = circleEvents.indexOf(event);
+    if (index > -1) 
+    {
+        circleEvents.splice(index, 1);
+    }
 }
 
 
@@ -592,8 +679,8 @@ function sweepLine()
     if(circleEvents.length != 0 
             && line_position == circleEvents[circleEvents.length -1].X)
     {
-        let vertex = circleEvents.pop();
-        removeFromBeachline(vertex);
+        let cE = circleEvents.pop();
+        removeFromBeachline(cE);
 
         //Check if theres another at this position.
         if(circleEvents.length != 0 
