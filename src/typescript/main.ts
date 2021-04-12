@@ -33,7 +33,7 @@ ctx.fillStyle = 'rgb(153, 153, 153)';
 ctx.strokeRect(0, 0, width, height);
 
 var pointList = [];
-var cEList= [];
+var displayedCircleEvents= [];
 
 //DEBUG FUNCTION
 function printList()
@@ -263,7 +263,7 @@ function rightBreakPoint(node, directrix)
 {
     var rArc = node.next;
     if (rArc) {
-        return this.leftBreakPoint(rArc, directrix);
+        return leftBreakPoint(rArc, directrix);
         }
     var site = node.site;
     return site.Y === directrix ? site.X : Infinity;
@@ -568,18 +568,23 @@ function detachCircleEvent(node: TreeNode)
     var cEvent = node.circleEventObject;
     if(cEvent)
     {
-        const index = circleEvents.indexOf(cEvent, 0);
+        let index = circleEvents.indexOf(cEvent, 0);
         if (index > -1) 
         {
             circleEvents.splice(index, 1);
         }
+        index = circleEvents.indexOf(cEvent.location, 0)
+        if(index > -1)
+        {
+            console.log("hi")
+            displayedCircleEvents.splice(index,1);
+        }
+        node.circleEventObject = null;
     }
 }
 
 function attachCircleEvent(node: TreeNode)
 {
-    console.log("cE")
-
     var lArc = node.previous;
     var rArc = node.next;
     if(!lArc || !rArc)
@@ -609,7 +614,7 @@ function attachCircleEvent(node: TreeNode)
     // return infinites: 1e-12 seems to fix the problem.
 
     var d = 2*(ax*cy-ay*cx);
-    if (d >= -1e-12)
+    if (d >= -2e-12)
     {
         console.log("d is off.")
         return;
@@ -632,7 +637,7 @@ function attachCircleEvent(node: TreeNode)
     if(circleEvents.length == 0)
     {
         circleEvents.push(newCircleEvent);
-        cEList.push(newCircleEvent.location)
+        displayedCircleEvents.push(newCircleEvent.location)
     }
     else
     {
@@ -642,13 +647,13 @@ function attachCircleEvent(node: TreeNode)
             if(circleEvents[i].location.X >= newCircleEvent.location.X)
             {
                 circleEvents.splice(i, 0, newCircleEvent);
-                cEList.push(newCircleEvent.location)
+                displayedCircleEvents.push(newCircleEvent.location)
             }
         }
         if(circleEvents.length == length)
         {
             circleEvents.push(newCircleEvent);
-            cEList.push(newCircleEvent.location)
+            displayedCircleEvents.push(newCircleEvent.location)
         }
     }
     
@@ -674,7 +679,7 @@ function removeFromBeachline(event: CircleEvent)
     while (lArc.circleEventObject && Math.abs(x-lArc.circleEventObject.location.X)<1e-9 && Math.abs(y-lArc.circleEventObject.yCenter)<1e-9) {
         previous = lArc.previous;
         disappearingTransitions.unshift(lArc);
-        detachBeachsection(lArc); // mark for reuse
+        detachBeachsection(lArc);
         lArc = previous;
         }
     // even though it is not disappearing, I will also add the beach section
@@ -1010,7 +1015,7 @@ function closeCells()
             vz = halfedges[(iLeft+1) % nHalfedges].getStartpoint();
             // if end point is not equal to start point, we need to add the missing
             // halfedge(s) up to vz
-            if (Math.abs(va.x-vz.x)>=1e-9 || Math.abs(va.y-vz.y)>=1e-9) {
+            if (Math.abs(va.X-vz.X)>=1e-9 || Math.abs(va.Y-vz.Y)>=1e-9) {
 
                 // rhill 2013-12-02:
                 // "Holes" in the halfedges are not necessarily always adjacent.
@@ -1020,9 +1025,9 @@ function closeCells()
                 switch (true) {
 
                     // walk downward along left side
-                    case equalWithEpsilon(va.x,xl) && lessThanWithEpsilon(va.y,yb):
-                        lastBorderSegment = equalWithEpsilon(vz.x,xl);
-                        vb = createVertex(xl, lastBorderSegment ? vz.y : yb);
+                    case equalWithEpsilon(va.X,xl) && lessThanWithEpsilon(va.Y,yb):
+                        lastBorderSegment = equalWithEpsilon(vz.X,xl);
+                        vb = createVertex(xl, lastBorderSegment ? vz.Y : yb);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
                         halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
@@ -1032,9 +1037,9 @@ function closeCells()
                         // fall through
 
                     // walk rightward along bottom side
-                    case equalWithEpsilon(va.y,yb) && lessThanWithEpsilon(va.x,xr):
-                        lastBorderSegment = equalWithEpsilon(vz.y,yb);
-                        vb = createVertex(lastBorderSegment ? vz.x : xr, yb);
+                    case equalWithEpsilon(va.Y,yb) && lessThanWithEpsilon(va.X,xr):
+                        lastBorderSegment = equalWithEpsilon(vz.Y,yb);
+                        vb = createVertex(lastBorderSegment ? vz.X : xr, yb);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
                         halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
@@ -1044,9 +1049,9 @@ function closeCells()
                         // fall through
 
                     // walk upward along right side
-                    case equalWithEpsilon(va.x,xr) && greaterThanWithEpsilon(va.y,yt):
-                        lastBorderSegment = equalWithEpsilon(vz.x,xr);
-                        vb = createVertex(xr, lastBorderSegment ? vz.y : yt);
+                    case equalWithEpsilon(va.X,xr) && greaterThanWithEpsilon(va.Y,yt):
+                        lastBorderSegment = equalWithEpsilon(vz.X,xr);
+                        vb = createVertex(xr, lastBorderSegment ? vz.Y : yt);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
                         halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
@@ -1056,9 +1061,9 @@ function closeCells()
                         // fall through
 
                     // walk leftward along top side
-                    case equalWithEpsilon(va.y,yt) && greaterThanWithEpsilon(va.x,xl):
-                        lastBorderSegment = equalWithEpsilon(vz.y,yt);
-                        vb = createVertex(lastBorderSegment ? vz.x : xl, yt);
+                    case equalWithEpsilon(va.Y,yt) && greaterThanWithEpsilon(va.X,xl):
+                        lastBorderSegment = equalWithEpsilon(vz.Y,yt);
+                        vb = createVertex(lastBorderSegment ? vz.X : xl, yt);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
                         halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
@@ -1068,8 +1073,8 @@ function closeCells()
                         // fall through
 
                         // walk downward along left side
-                        lastBorderSegment = equalWithEpsilon(vz.x,xl);
-                        vb = createVertex(xl, lastBorderSegment ? vz.y : yb);
+                        lastBorderSegment = equalWithEpsilon(vz.X,xl);
+                        vb = createVertex(xl, lastBorderSegment ? vz.Y : yb);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
                         halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
@@ -1079,8 +1084,8 @@ function closeCells()
                         // fall through
 
                         // walk rightward along bottom side
-                        lastBorderSegment = equalWithEpsilon(vz.y,yb);
-                        vb = createVertex(lastBorderSegment ? vz.x : xr, yb);
+                        lastBorderSegment = equalWithEpsilon(vz.Y,yb);
+                        vb = createVertex(lastBorderSegment ? vz.X : xr, yb);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
                         halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
@@ -1090,8 +1095,8 @@ function closeCells()
                         // fall through
 
                         // walk upward along right side
-                        lastBorderSegment = equalWithEpsilon(vz.x,xr);
-                        vb = createVertex(xr, lastBorderSegment ? vz.y : yt);
+                        lastBorderSegment = equalWithEpsilon(vz.X,xr);
+                        vb = createVertex(xr, lastBorderSegment ? vz.Y : yt);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
                         halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
@@ -1153,14 +1158,15 @@ function loop()
             || circleEvents.length > 0) 
         {
           checkEvents();
-          renderCanvas();
-          loop();             
+          renderCanvas(true);
+          loop();
         }
         else
         {
             console.log("WE'RE DONE.")
             clipEdges();
             closeCells();
+            renderCanvas(false);
         }
     }, 10)
 }
@@ -1169,7 +1175,7 @@ function checkEvents()
 {
     //SITE EVENT
     if(siteEvents.length != 0 
-        && line_position == siteEvents[siteEvents.length -1].Y)
+        && line_position >= siteEvents[siteEvents.length -1].Y)
     {
         let site_to_handle = siteEvents.pop();
         handleSite(site_to_handle);
@@ -1179,7 +1185,7 @@ function checkEvents()
         //console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         //Check if theres another at this position.
         if(siteEvents.length != 0 
-            && line_position == siteEvents[siteEvents.length -1].Y)
+            && line_position >= siteEvents[siteEvents.length -1].Y)
         {
             checkEvents();
         }
@@ -1194,15 +1200,15 @@ function checkEvents()
 
     //CIRCLE EVENT
     if(circleEvents.length != 0 
-            && line_position == circleEvents[circleEvents.length -1].location.Y)
+            && line_position >= circleEvents[circleEvents.length -1].location.Y)
     {
         let cE = circleEvents.pop();
-        console.log("we here.")
+        //console.log("we here.")
         removeFromBeachline(cE);
 
         //Check if theres another at this position.
         if(circleEvents.length != 0 
-            && line_position == circleEvents[circleEvents.length -1].location.Y)
+            && line_position >= circleEvents[circleEvents.length -1].location.Y)
         {
             checkEvents();
         }
@@ -1211,7 +1217,7 @@ function checkEvents()
 
 //RENDERING
 
-function renderCanvas()
+function renderCanvas(parabolas: boolean)
 {
     //CLEAR
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1227,7 +1233,10 @@ function renderCanvas()
     ctx.lineTo(canvas.width, line_position);
     ctx.stroke();
     //DRAW PARABOLAS
-    drawParabolas(line_position);
+    if(parabolas)
+    {
+        drawParabolas(line_position);
+    }
     //DRAW EDGES
     drawEdges();
     line_position += 1;
@@ -1294,7 +1303,7 @@ function drawPoints()
         ctx.fill();
     });
 
-    cEList.forEach(point => {
+    displayedCircleEvents.forEach(point => {
         ctx.fillStyle = 'rgb(255, 0, 0)';
         ctx.beginPath();
         ctx.arc(point.X, point.Y, 3.5, 0, 360, false);
@@ -1394,7 +1403,7 @@ function createHalfEdge(edge: Edge, lsite: Point, rsite: Point)
 
     if (rsite) 
     {
-        this.angle = Math.atan2(rsite.Y - lsite.Y, rsite.X - lsite.X);
+        newHalfEdge.angle = Math.atan2(rsite.Y - lsite.Y, rsite.X - lsite.X);
     }
     else
     {
@@ -1402,7 +1411,7 @@ function createHalfEdge(edge: Edge, lsite: Point, rsite: Point)
             vb = edge.end;
         // rhill 2011-05-31: used to call getStartpoint()/getEndpoint(),
         // but for performance purpose, these are expanded in place here.
-        this.angle = edge.left_site === lsite ?
+        newHalfEdge.angle = edge.left_site === lsite ?
             Math.atan2(vb.X-va.X, va.Y-vb.Y) :
             Math.atan2(va.X-vb.X, vb.Y-va.Y);
     }
@@ -1454,7 +1463,7 @@ class HalfEdge
 {
     public site: Point;
     public right_site: Point;
-
+    public angle: number;
     public edge: Edge;
 
     constructor(ls: Point, rs: Point, e: Edge) {
