@@ -33,7 +33,7 @@ ctx.fillStyle = 'rgb(153, 153, 153)';
 ctx.strokeRect(0, 0, width, height);
 
 var pointList = [];
-var displayedCircleEvents= [];
+var displayedCircleEvents = [];
 
 //DEBUG FUNCTION
 function printList()
@@ -104,6 +104,7 @@ function addToBeachline(site: Point)
         if (dxl > 1e-9) 
         {
             // this case should never happen
+            console.log("this shouldn't happen")
             currentNode = currentNode.left;
         }
         else 
@@ -573,7 +574,7 @@ function detachCircleEvent(node: TreeNode)
         {
             circleEvents.splice(index, 1);
         }
-        index = circleEvents.indexOf(cEvent.location, 0)
+        index = displayedCircleEvents.indexOf(cEvent.location, 0)
         if(index > -1)
         {
             console.log("hi")
@@ -1120,35 +1121,6 @@ function greaterThanWithEpsilon(a,b){return a-b>1e-9;};
 
 function lessThanWithEpsilon(a,b){return b-a>1e-9;};
 
-//MAIN ENTRY POINT FOR ALGORITHM
-function sweepLine()
-{
-    //CHECKS
-    if(!clicked)
-    {
-        button.disabled = true;
-        clicked = true;
-
-        //ALGORITHM INIT
-        siteEvents = pointList.slice(0);
-        siteEvents.sort(function(a,b){
-            var diff = b.Y - a.Y;
-            if (diff) {return diff;}
-            return b.X - a.X;
-        });
-    }
-    //Don't start before we have points.
-    if(pointList.length == 0)
-    {
-        clicked = false;
-        button.disabled = false;
-        return;
-    }
-
-    //ALGORITHM
-    loop()
-}
-
 function loop()
 {
     setTimeout(function() 
@@ -1323,7 +1295,7 @@ function createEdge(lSite: Point, rSite: Point, start: Point, end: Point)
     {
         setEdgeStartpoint(edge, lSite, rSite, start);
     }
-    if(start)
+    if(end)
     {
         setEdgeEndpoint(edge, lSite, rSite, end);
     }
@@ -1332,22 +1304,22 @@ function createEdge(lSite: Point, rSite: Point, start: Point, end: Point)
     if(index == -1)
     {
         regions.push(new Region(lSite))
-        regions[regions.length - 1].edges.push(edge);
+        regions[regions.length - 1].halfedges.push(createHalfEdge(edge, lSite, rSite));
     }
     else
     {
-        regions[index].edges.push(edge);
+        regions[index].halfedges.push(createHalfEdge(edge, lSite, rSite));
     }
 
     index = findRegion(rSite);
     if(index == -1)
     {
         regions.push(new Region(rSite))
-        regions[regions.length - 1].edges.push(edge);
+        regions[regions.length - 1].halfedges.push(createHalfEdge(edge, rSite, lSite));
     }
     else
     {
-        regions[index].edges.push(edge);
+        regions[index].halfedges.push(createHalfEdge(edge, rSite, lSite));
     }
 
     return edge;
@@ -1476,12 +1448,12 @@ class HalfEdge
 class Region
 {
     public site: Point;
-    public edges: [];
+    public halfedges: [];
     public closeMe: boolean = false;
 
     constructor(s: Point) {
         this.site = s;
-        this.edges = [];
+        this.halfedges = [];
     }
 }
 
@@ -1518,4 +1490,33 @@ class TreeNode
     {
         this.site = s;
     }
+}
+
+//MAIN ENTRY POINT FOR ALGORITHM
+function sweepLine()
+{
+    //CHECKS
+    if(!clicked)
+    {
+        button.disabled = true;
+        clicked = true;
+
+        //ALGORITHM INIT
+        siteEvents = pointList.slice(0);
+        siteEvents.sort(function(a,b){
+            var diff = b.Y - a.Y;
+            if (diff) {return diff;}
+            return b.X - a.X;
+        });
+    }
+    //Don't start before we have points.
+    if(pointList.length == 0)
+    {
+        clicked = false;
+        button.disabled = false;
+        return;
+    }
+
+    //ALGORITHM
+    loop()
 }
