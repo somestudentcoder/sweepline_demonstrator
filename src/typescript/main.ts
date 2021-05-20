@@ -21,10 +21,10 @@ var siteEvents = [];
 var circleEvents = [];
 var beachlineRoot = null;
 
-var edges = [];
-var halfedges = [];
-var regions = [];
-var vertices = [];
+var edges = Array<Edge>();
+//var halfedges = [];
+var regions = Array<Region>();
+//var vertices = Array<Point>();
 
 
 const ctx = canvas.getContext('2d');
@@ -104,7 +104,7 @@ function addToBeachline(site: Point)
         if (dxl > 1e-9) 
         {
             // this case should never happen
-            console.log("this shouldn't happen")
+            console.log("tsh")
             currentNode = currentNode.left;
         }
         else 
@@ -224,13 +224,12 @@ function addToBeachline(site: Point)
 // adapted from https://github.com/gorhill/Javascript-Voronoi
 function leftBreakPoint(node, directrix) 
 {
-    
     var site = node.site,
         rfocx = site.X,
         rfocy = site.Y,
         pby2 = rfocy-directrix;
     // parabola in degenerate case where focus is on directrix
-    if (!pby2)
+    if (!pby2) 
     {
         return rfocx;
     }
@@ -248,7 +247,7 @@ function leftBreakPoint(node, directrix)
     {
         return lfocx;
     }
-    var hl = lfocy-rfocy,
+    var hl = lfocx-rfocx,
         aby2 = 1/pby2-1/plby2,
         b = hl/plby2;
     if (aby2) 
@@ -577,8 +576,7 @@ function detachCircleEvent(node: TreeNode)
         index = displayedCircleEvents.indexOf(cEvent.location, 0)
         if(index > -1)
         {
-            console.log("hi")
-            displayedCircleEvents.splice(index,1);
+            displayedCircleEvents.splice(index, 1);
         }
         node.circleEventObject = null;
     }
@@ -590,7 +588,7 @@ function attachCircleEvent(node: TreeNode)
     var rArc = node.next;
     if(!lArc || !rArc)
     {
-        console.error("We're missing an arc");
+        console.log("We're missing an arc");
         return;
     }
     var lSite = lArc.site;
@@ -617,7 +615,7 @@ function attachCircleEvent(node: TreeNode)
     var d = 2*(ax*cy-ay*cx);
     if (d >= -2e-12)
     {
-        console.log("d is off.")
+        //console.log("d is off.")
         return;
     }
 
@@ -645,10 +643,11 @@ function attachCircleEvent(node: TreeNode)
         let length = circleEvents.length;
         for(var i = 0; i < length; i++)
         {
-            if(circleEvents[i].location.X >= newCircleEvent.location.X)
+            if(circleEvents[i].location.Y <= newCircleEvent.location.Y)
             {
                 circleEvents.splice(i, 0, newCircleEvent);
-                displayedCircleEvents.push(newCircleEvent.location)
+                displayedCircleEvents.splice(i, 0, newCircleEvent.location)
+                break;
             }
         }
         if(circleEvents.length == length)
@@ -716,7 +715,7 @@ function removeFromBeachline(event: CircleEvent)
     
     lArc = disappearingTransitions[0];
     rArc = disappearingTransitions[nArcs-1];
-    rArc.edge = createEdge(lArc.site, rArc.site, undefined, vertex);
+    rArc.edge = createEdge(lArc.site, rArc.site, null, vertex);
 
     // create circle events if any for beach sections left in the beachline
     // adjacent to collapsed sections
@@ -739,6 +738,13 @@ function clipEdges()
     var edge;
 
     // iterate backward so we can splice safely
+    console.log(edges.length)
+    edges.forEach((e,index) => {
+        console.log("index: ", index)
+        console.log("start: ", e.start)
+        console.log("end", e.end)
+    });
+
     while (iEdge--) {
         edge = edges[iEdge];
         // edge is removed if:
@@ -747,70 +753,72 @@ function clipEdges()
         if (!connectEdge(edge) ||
             !clipEdge(edge) ||
             (Math.abs(edge.start.X - edge.end.X) < 1e-9 && Math.abs(edge.start.Y - edge.end.Y) < 1e-9)) {
+                console.log("EDGE DELETE:")
+                console.log(edge.start)
+                console.log(edge.end)
             edge.start = edge.end = null;
             edges.splice(iEdge,1);
             }
         }
 }
 
-function clipEdge(edge: Edge)
-{
+function clipEdge(edge: Edge){
     var ax = edge.start.X,
-        ay = edge.start.Y,
-        bx = edge.end.X,
-        by = edge.end.Y,
-        t0 = 0,
-        t1 = 1,
-        dx = bx-ax,
-        dy = by-ay;
+    ay = edge.start.Y,
+    bx = edge.end.X,
+    by = edge.end.Y,
+    t0 = 0,
+    t1 = 1,
+    dx = bx-ax,
+    dy = by-ay;
     // left
-    var q = ax;
+    var q = ax-0;
     if (dx===0 && q<0) {return false;}
     var r = -q/dx;
     if (dx<0) {
-        if (r<t0) {return false;}
-        if (r<t1) {t1=r;}
-        }
+    if (r<t0) {return false;}
+    if (r<t1) {t1=r;}
+    }
     else if (dx>0) {
-        if (r>t1) {return false;}
-        if (r>t0) {t0=r;}
-        }
+    if (r>t1) {return false;}
+    if (r>t0) {t0=r;}
+    }
     // right
-    q = width - ax;
+    q = width-ax;
     if (dx===0 && q<0) {return false;}
     r = q/dx;
     if (dx<0) {
-        if (r>t1) {return false;}
-        if (r>t0) {t0=r;}
-        }
+    if (r>t1) {return false;}
+    if (r>t0) {t0=r;}
+    }
     else if (dx>0) {
-        if (r<t0) {return false;}
-        if (r<t1) {t1=r;}
-        }
+    if (r<t0) {return false;}
+    if (r<t1) {t1=r;}
+    }
     // top
-    q = ay;
+    q = ay-0;
     if (dy===0 && q<0) {return false;}
     r = -q/dy;
     if (dy<0) {
-        if (r<t0) {return false;}
-        if (r<t1) {t1=r;}
-        }
+    if (r<t0) {return false;}
+    if (r<t1) {t1=r;}
+    }
     else if (dy>0) {
-        if (r>t1) {return false;}
-        if (r>t0) {t0=r;}
-        }
+    if (r>t1) {return false;}
+    if (r>t0) {t0=r;}
+    }
     // bottom        
-    q = height - ay;
+    q = height-ay;
     if (dy===0 && q<0) {return false;}
     r = q/dy;
     if (dy<0) {
-        if (r>t1) {return false;}
-        if (r>t0) {t0=r;}
-        }
+    if (r>t1) {return false;}
+    if (r>t0) {t0=r;}
+    }
     else if (dy>0) {
-        if (r<t0) {return false;}
-        if (r<t1) {t1=r;}
-        }
+    if (r<t0) {return false;}
+    if (r<t1) {t1=r;}
+    }
 
     // if we reach this point, Voronoi edge is within bbox
 
@@ -819,36 +827,37 @@ function clipEdge(edge: Edge)
     // than modifying the existing one, since the existing
     // one is likely shared with at least another edge
     if (t0 > 0) {
-        edge.start = createVertex(ax+t0*dx, ay+t0*dy);
-        }
+    edge.start = createVertex(ax+t0*dx, ay+t0*dy);
+    }
 
     // if t1 < 1, vb needs to change
     // rhill 2011-06-03: we need to create a new vertex rather
     // than modifying the existing one, since the existing
     // one is likely shared with at least another edge
     if (t1 < 1) {
-        edge.end = createVertex(ax+t1*dx, ay+t1*dy);
-        }
+    edge.end = createVertex(ax+t1*dx, ay+t1*dy);
+    }
 
     // va and/or vb were clipped, thus we will need to close
-    // regions which use this edge.
+    // cells which use this edge.
     if ( t0 > 0 || t1 < 1 ) {
-        let index = findRegion(edge.left_site)
-        regions[index].closeMe = true;
+        var index = findRegion(edge.left_site)
+        regions[index].closeMe = true
         index = findRegion(edge.right_site)
-        regions[index].closeMe = true;
+        regions[index].closeMe = true
     }
 
     return true;
-}
+};
 
 function connectEdge(edge: Edge)
 {
+    console.log("EXCLAMAAAATION!")
     var vb = edge.end;
-    if (!!vb) {return true;}
+    if(!!vb){return true;} 
 
     // make local copy for performance purpose
-    var start = edge.start,
+    var va = edge.start,
         xl = 0,
         xr = width,
         yt = 0,
@@ -887,11 +896,11 @@ function connectEdge(edge: Edge)
     // vertical: left.Y == right.Y
 
     // depending on the direction, find the best side of the
-    // bounding box to use to determine a reasonable start point
+    // bounding box to use to determine a reasonable va point
 
     // rhill 2013-12-02:
     // While at it, since we have the values which define the line,
-    // clip the end of start if it is outside the bbox.
+    // clip the end of va if it is outside the bbox.
     // https://github.com/gorhill/Javascript-Voronoi/issues/15
     // TODO: Do all the clipping here rather than rely on Liang-Barsky
     // which does not do well sometimes due to loss of arithmetic
@@ -904,89 +913,89 @@ function connectEdge(edge: Edge)
         if (fx < xl || fx >= xr) {return false;}
         // downward
         if (lx > rx) {
-            if (!start || start.Y < yt) {
-                start = createVertex(fx, yt);
+            if (!va || va.Y < yt) {
+                va = createVertex(fx, yt);
                 }
-            else if (start.Y >= yb) {
+            else if (va.Y >= yb) {
                 return false;
                 }
             vb = createVertex(fx, yb);
             }
         // upward
         else {
-            if (!start || start.Y > yb) {
-                start = createVertex(fx, yb);
+            if (!va || va.Y > yb) {
+                va = createVertex(fx, yb);
                 }
-            else if (start.Y < yt) {
+            else if (va.Y < yt) {
                 return false;
                 }
             vb = createVertex(fx, yt);
             }
         }
-    // closer to vertical than horizontal, connect start point to the
+    // closer to vertical than horizontal, connect va point to the
     // top or bottom side of the bounding box
     else if (fm < -1 || fm > 1) {
         // downward
         if (lx > rx) {
-            if (!start || start.Y < yt) {
-                start = createVertex((yt-fb)/fm, yt);
+            if (!va || va.Y < yt) {
+                va = createVertex((yt-fb)/fm, yt);
                 }
-            else if (start.Y >= yb) {
+            else if (va.Y >= yb) {
                 return false;
                 }
             vb = createVertex((yb-fb)/fm, yb);
             }
         // upward
         else {
-            if (!start || start.Y > yb) {
-                start = createVertex((yb-fb)/fm, yb);
+            if (!va || va.Y > yb) {
+                va = createVertex((yb-fb)/fm, yb);
                 }
-            else if (start.Y < yt) {
+            else if (va.Y < yt) {
                 return false;
                 }
             vb = createVertex((yt-fb)/fm, yt);
             }
         }
-    // closer to horizontal than vertical, connect start point to the
+    // closer to horizontal than vertical, connect va point to the
     // left or right side of the bounding box
     else {
         // rightward
         if (ly < ry) {
-            if (!start || start.X < xl) {
-                start = createVertex(xl, fm*xl+fb);
+            if (!va || va.X < xl) {
+                va = createVertex(xl, fm*xl+fb);
                 }
-            else if (start.X >= xr) {
+            else if (va.X >= xr) {
                 return false;
                 }
             vb = createVertex(xr, fm*xr+fb);
             }
         // leftward
         else {
-            if (!start || start.X > xr) {
-                start = createVertex(xr, fm*xr+fb);
+            if (!va || va.X > xr) {
+                va = createVertex(xr, fm*xr+fb);
                 }
-            else if (start.X < xl) {
+            else if (va.X < xl) {
                 return false;
                 }
             vb = createVertex(xl, fm*xl+fb);
             }
         }
-    edge.start = start;
+    edge.start = va;
     edge.end = vb;
-
+    console.log("end connectEdge")
     return true;
 }
 
 function closeCells()
 {
-    var xl = 0,
+    var xl = 0.0,
         xr = width,
-        yt = 0,
+        yt = 0.0,
         yb = height,
         iRegion = regions.length,
         region,
         iLeft,
-        halfedges, nHalfedges,
+        nHalfedges,
         edge,
         va, vb, vz,
         lastBorderSegment
@@ -995,31 +1004,34 @@ function closeCells()
         region = regions[iRegion];
         // prune, order halfedges counterclockwise, then add missing ones
         // required to close regions
-        if (!region.prepareHalfedges()) {
+        if (!prepareHalfedges(region)) {
+            console.log("prep")
             continue;
             }
         if (!region.closeMe) {
+            console.log("closed")
             continue;
             }
         // find first 'unclosed' point.
         // an 'unclosed' point will be the end point of a halfedge which
         // does not match the start point of the following halfedge
-        halfedges = region.halfedges;
-        nHalfedges = halfedges.length;
+        nHalfedges = region.halfedges.length;
         // special case: only one site, in which case, the viewport is the region
         // ...
-
         // all other cases
         iLeft = 0;
         while (iLeft < nHalfedges) {
-            va = halfedges[iLeft].getEndpoint();
-            vz = halfedges[(iLeft+1) % nHalfedges].getStartpoint();
+            va = getEndpoint(region.halfedges[iLeft]);
+            vz = getStartpoint(region.halfedges[(iLeft+1) % nHalfedges]);
+            console.log("iLEFT: ", iLeft)
+            console.log("VA:",va)
+            console.log("VZ:",vz)
             // if end point is not equal to start point, we need to add the missing
             // halfedge(s) up to vz
             if (Math.abs(va.X-vz.X)>=1e-9 || Math.abs(va.Y-vz.Y)>=1e-9) {
 
                 // rhill 2013-12-02:
-                // "Holes" in the halfedges are not necessarily always adjacent.
+                // "Holes" in the region.halfedges are not necessarily always adjacent.
                 // https://github.com/gorhill/Javascript-Voronoi/issues/16
 
                 // find entry point:
@@ -1027,11 +1039,12 @@ function closeCells()
 
                     // walk downward along left side
                     case equalWithEpsilon(va.X,xl) && lessThanWithEpsilon(va.Y,yb):
+                        console.log("1");
                         lastBorderSegment = equalWithEpsilon(vz.X,xl);
                         vb = createVertex(xl, lastBorderSegment ? vz.Y : yb);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
-                        halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
+                        region.halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
                         nHalfedges++;
                         if ( lastBorderSegment ) { break; }
                         va = vb;
@@ -1039,11 +1052,12 @@ function closeCells()
 
                     // walk rightward along bottom side
                     case equalWithEpsilon(va.Y,yb) && lessThanWithEpsilon(va.X,xr):
+                        console.log("2");
                         lastBorderSegment = equalWithEpsilon(vz.Y,yb);
                         vb = createVertex(lastBorderSegment ? vz.X : xr, yb);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
-                        halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
+                        region.halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
                         nHalfedges++;
                         if ( lastBorderSegment ) { break; }
                         va = vb;
@@ -1051,11 +1065,12 @@ function closeCells()
 
                     // walk upward along right side
                     case equalWithEpsilon(va.X,xr) && greaterThanWithEpsilon(va.Y,yt):
+                        console.log("3");
                         lastBorderSegment = equalWithEpsilon(vz.X,xr);
                         vb = createVertex(xr, lastBorderSegment ? vz.Y : yt);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
-                        halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
+                        region.halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
                         nHalfedges++;
                         if ( lastBorderSegment ) { break; }
                         va = vb;
@@ -1063,11 +1078,12 @@ function closeCells()
 
                     // walk leftward along top side
                     case equalWithEpsilon(va.Y,yt) && greaterThanWithEpsilon(va.X,xl):
+                        console.log("4");
                         lastBorderSegment = equalWithEpsilon(vz.Y,yt);
                         vb = createVertex(lastBorderSegment ? vz.X : xl, yt);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
-                        halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
+                        region.halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
                         nHalfedges++;
                         if ( lastBorderSegment ) { break; }
                         va = vb;
@@ -1078,7 +1094,7 @@ function closeCells()
                         vb = createVertex(xl, lastBorderSegment ? vz.Y : yb);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
-                        halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
+                        region.halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
                         nHalfedges++;
                         if ( lastBorderSegment ) { break; }
                         va = vb;
@@ -1089,7 +1105,7 @@ function closeCells()
                         vb = createVertex(lastBorderSegment ? vz.X : xr, yb);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
-                        halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
+                        region.halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
                         nHalfedges++;
                         if ( lastBorderSegment ) { break; }
                         va = vb;
@@ -1100,7 +1116,7 @@ function closeCells()
                         vb = createVertex(xr, lastBorderSegment ? vz.Y : yt);
                         edge = createBorderEdge(region.site, va, vb);
                         iLeft++;
-                        halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
+                        region.halfedges.splice(iLeft, 0, createHalfEdge(edge, region.site, null));
                         nHalfedges++;
                         if ( lastBorderSegment ) { break; }
                         // fall through
@@ -1146,41 +1162,42 @@ function loop()
 function checkEvents()
 {
     //SITE EVENT
-    if(siteEvents.length != 0 
+    if(siteEvents.length > 0 
         && line_position >= siteEvents[siteEvents.length -1].Y)
     {
         let site_to_handle = siteEvents.pop();
         handleSite(site_to_handle);
-        
-        //DEBUG
-        //printList()
-        //console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+
         //Check if theres another at this position.
-        if(siteEvents.length != 0 
+        if(siteEvents.length > 0 
             && line_position >= siteEvents[siteEvents.length -1].Y)
         {
             checkEvents();
         }
     }
-    
-    // console.log("vvvvvvvvvvvvvvvvvvv")
-    // console.log(siteEvents.length)
-    // console.log(circleEvents.length)
-    // console.log(line_position)
-    // console.log(height)
-    // console.log("###################")
 
     //CIRCLE EVENT
-    if(circleEvents.length != 0 
+    if(circleEvents.length > 0 
             && line_position >= circleEvents[circleEvents.length -1].location.Y)
     {
+        //console.log("cE:", circleEvents)
         let cE = circleEvents.pop();
-        //console.log("we here.")
         removeFromBeachline(cE);
 
         //Check if theres another at this position.
-        if(circleEvents.length != 0 
+        if(circleEvents.length > 0 
             && line_position >= circleEvents[circleEvents.length -1].location.Y)
+        {
+            checkEvents();
+        }
+    }
+
+    if(line_position >= height && circleEvents.length > 0)
+    {
+        let cE = circleEvents.pop();
+        removeFromBeachline(cE);
+        //Check if theres another at this position.
+        if(circleEvents.length > 0)
         {
             checkEvents();
         }
@@ -1189,7 +1206,7 @@ function checkEvents()
 
 //RENDERING
 
-function renderCanvas(parabolas: boolean)
+function renderCanvas(helpers: boolean)
 {
     //CLEAR
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1199,14 +1216,15 @@ function renderCanvas(parabolas: boolean)
     ctx.strokeRect(0, 0, width, height);
     //DRAW POINTS
     drawPoints();
-    //DRAW LINE
-    ctx.strokeStyle = 'rgb(0, 0, 0)';
-    ctx.moveTo(0, line_position);
-    ctx.lineTo(canvas.width, line_position);
-    ctx.stroke();
-    //DRAW PARABOLAS
-    if(parabolas)
+
+    if(helpers)
     {
+        //DRAW LINE
+        ctx.strokeStyle = 'rgb(0, 0, 0)';
+        ctx.moveTo(0, line_position);
+        ctx.lineTo(canvas.width, line_position);
+        ctx.stroke();
+        //DRAW PARABOLAS
         drawParabolas(line_position);
     }
     //DRAW EDGES
@@ -1238,7 +1256,6 @@ function drawParabola(f: Point, d_Y: number)
 
 function drawEdges()
 {
-    //console.log(edges)
     edges.forEach(edge => {
         if(edge.start && edge.end)
         {
@@ -1342,17 +1359,7 @@ function setEdgeStartpoint(edge: Edge, lSite: Point, rSite: Point, vertex: Point
 
 function setEdgeEndpoint(edge: Edge, lSite: Point, rSite: Point, vertex: Point)
 {
-    if (!edge.start && !edge.end) {
-        edge.start = vertex;
-        edge.left_site = lSite;
-        edge.right_site = rSite;
-        }
-    else if (edge.left_site === rSite) {
-        edge.end = vertex;
-        }
-    else {
-        edge.start = vertex;
-        }
+    setEdgeStartpoint(edge, rSite, lSite, vertex);
 }
 
 function findRegion(site: Point)
@@ -1387,6 +1394,7 @@ function createHalfEdge(edge: Edge, lsite: Point, rsite: Point)
             Math.atan2(vb.X-va.X, va.Y-vb.Y) :
             Math.atan2(va.X-vb.X, vb.Y-va.Y);
     }
+    return newHalfEdge;
 }
 
 function createBorderEdge(lsite: Point, start: Point, end: Point)
@@ -1398,10 +1406,46 @@ function createBorderEdge(lsite: Point, start: Point, end: Point)
 
 function createVertex(x: number, y: number)
 {
-    var newV = new Point(x,y)
-    vertices.push(newV)
-    return newV
+    var new_vertex = new Point(x,y);
+    //vertices.push(new_vertex)
+    return new_vertex;
 }
+
+function prepareHalfedges(region: Region) {
+    var iHalfedge = region.halfedges.length,
+        edge;
+    // get rid of unused halfedges
+    // rhill 2011-05-27: Keep it simple, no point here in trying
+    // to be fancy: dangling edges are a typically a minority.
+    console.log("HFLENGTH1", region.halfedges.length)
+    console.log("site:", region.site);
+    while (iHalfedge--) {
+        edge = region.halfedges[iHalfedge].edge;
+        if (!edge.end || !edge.start) {
+            console.log("edge:")
+            console.log(edge.start)
+            console.log(edge.end)
+            region.halfedges.splice(iHalfedge,1);
+            }
+        }
+
+    // rhill 2011-05-26: I tried to use a binary search at insertion
+    // time to keep the array sorted on-the-fly (in Cell.addHalfedge()).
+    // There was no real benefits in doing so, performance on
+    // Firefox 3.6 was improved marginally, while performance on
+    // Opera 11 was penalized marginally.
+    region.halfedges.sort(function(a,b){return b.angle-a.angle;});
+    console.log("HFLENGTH2", region.halfedges.length)
+    return region.halfedges.length;
+}
+
+function getStartpoint(hf: HalfEdge){
+    return hf.edge.left_site === hf.site ? hf.edge.start : hf.edge.end;
+    };
+
+function getEndpoint(hf: HalfEdge){
+    return hf.edge.left_site === hf.site ? hf.edge.end : hf.edge.start;
+    };
 
 //DATASTRUCTURES
 class Point
@@ -1448,12 +1492,12 @@ class HalfEdge
 class Region
 {
     public site: Point;
-    public halfedges: [];
+    public halfedges: Array<HalfEdge>;
     public closeMe: boolean = false;
 
     constructor(s: Point) {
         this.site = s;
-        this.halfedges = [];
+        this.halfedges = Array<HalfEdge>();
     }
 }
 
