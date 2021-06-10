@@ -1,6 +1,5 @@
-# sweepline_demonstrator
+# Voronoi Diagram Sweep Line (Fortune's Algorithm)
 
-This will serve as the repository for a voronoi diagram, sweep
-line demonstrator.
+Simply open the index file in /src to test the demonstrator.
 
-README will be adjusted in the process.
+Big thanks to Raymond Hill - https://github.com/gorhill/Javascript-Voronoi. Lots of his code was adapted to produce this demonstrator. 
