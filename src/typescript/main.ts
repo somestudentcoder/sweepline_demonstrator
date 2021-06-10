@@ -197,7 +197,7 @@ function addToBeachline(site: Point)
             ax = lSite.X,
             ay = lSite.Y,
             bx=site.X-ax,
-            by=site.X-ay,
+            by=site.Y-ay,
             rSite = rArc.site,
             cx=rSite.X-ax,
             cy=rSite.Y-ay,
@@ -738,12 +738,6 @@ function clipEdges()
     var edge;
 
     // iterate backward so we can splice safely
-    console.log(edges.length)
-    edges.forEach((e,index) => {
-        console.log("index: ", index)
-        console.log("start: ", e.start)
-        console.log("end", e.end)
-    });
 
     while (iEdge--) {
         edge = edges[iEdge];
@@ -753,11 +747,8 @@ function clipEdges()
         if (!connectEdge(edge) ||
             !clipEdge(edge) ||
             (Math.abs(edge.start.X - edge.end.X) < 1e-9 && Math.abs(edge.start.Y - edge.end.Y) < 1e-9)) {
-                console.log("EDGE DELETE:")
-                console.log(edge.start)
-                console.log(edge.end)
-            edge.start = edge.end = null;
-            edges.splice(iEdge,1);
+                edge.start = edge.end = null;
+                edges.splice(iEdge,1);
             }
         }
 }
@@ -841,10 +832,10 @@ function clipEdge(edge: Edge){
     // va and/or vb were clipped, thus we will need to close
     // cells which use this edge.
     if ( t0 > 0 || t1 < 1 ) {
-        var index = findRegion(edge.left_site)
-        regions[index].closeMe = true
-        index = findRegion(edge.right_site)
-        regions[index].closeMe = true
+        var index = findRegion(edge.left_site);
+        regions[index].closeMe = true;
+        index = findRegion(edge.right_site);
+        regions[index].closeMe = true;
     }
 
     return true;
@@ -852,7 +843,6 @@ function clipEdge(edge: Edge){
 
 function connectEdge(edge: Edge)
 {
-    console.log("EXCLAMAAAATION!")
     var vb = edge.end;
     if(!!vb){return true;} 
 
@@ -982,7 +972,6 @@ function connectEdge(edge: Edge)
         }
     edge.start = va;
     edge.end = vb;
-    console.log("end connectEdge")
     return true;
 }
 
@@ -1005,11 +994,9 @@ function closeCells()
         // prune, order halfedges counterclockwise, then add missing ones
         // required to close regions
         if (!prepareHalfedges(region)) {
-            console.log("prep")
             continue;
             }
         if (!region.closeMe) {
-            console.log("closed")
             continue;
             }
         // find first 'unclosed' point.
@@ -1023,9 +1010,7 @@ function closeCells()
         while (iLeft < nHalfedges) {
             va = getEndpoint(region.halfedges[iLeft]);
             vz = getStartpoint(region.halfedges[(iLeft+1) % nHalfedges]);
-            console.log("iLEFT: ", iLeft)
-            console.log("VA:",va)
-            console.log("VZ:",vz)
+
             // if end point is not equal to start point, we need to add the missing
             // halfedge(s) up to vz
             if (Math.abs(va.X-vz.X)>=1e-9 || Math.abs(va.Y-vz.Y)>=1e-9) {
@@ -1039,7 +1024,6 @@ function closeCells()
 
                     // walk downward along left side
                     case equalWithEpsilon(va.X,xl) && lessThanWithEpsilon(va.Y,yb):
-                        console.log("1");
                         lastBorderSegment = equalWithEpsilon(vz.X,xl);
                         vb = createVertex(xl, lastBorderSegment ? vz.Y : yb);
                         edge = createBorderEdge(region.site, va, vb);
@@ -1052,7 +1036,6 @@ function closeCells()
 
                     // walk rightward along bottom side
                     case equalWithEpsilon(va.Y,yb) && lessThanWithEpsilon(va.X,xr):
-                        console.log("2");
                         lastBorderSegment = equalWithEpsilon(vz.Y,yb);
                         vb = createVertex(lastBorderSegment ? vz.X : xr, yb);
                         edge = createBorderEdge(region.site, va, vb);
@@ -1065,7 +1048,6 @@ function closeCells()
 
                     // walk upward along right side
                     case equalWithEpsilon(va.X,xr) && greaterThanWithEpsilon(va.Y,yt):
-                        console.log("3");
                         lastBorderSegment = equalWithEpsilon(vz.X,xr);
                         vb = createVertex(xr, lastBorderSegment ? vz.Y : yt);
                         edge = createBorderEdge(region.site, va, vb);
@@ -1078,7 +1060,6 @@ function closeCells()
 
                     // walk leftward along top side
                     case equalWithEpsilon(va.Y,yt) && greaterThanWithEpsilon(va.X,xl):
-                        console.log("4");
                         lastBorderSegment = equalWithEpsilon(vz.Y,yt);
                         vb = createVertex(lastBorderSegment ? vz.X : xl, yt);
                         edge = createBorderEdge(region.site, va, vb);
@@ -1304,7 +1285,7 @@ function drawPoints()
 //DATASTRUCTURE HANDLERS
 function createEdge(lSite: Point, rSite: Point, start: Point, end: Point)
 {
-    var edge = new Edge(lSite, rSite, start, end);
+    var edge = new Edge(lSite, rSite, null, null);
 
     edges.push(edge)
 
@@ -1376,13 +1357,13 @@ function findRegion(site: Point)
     return return_value;
 }
 
-function createHalfEdge(edge: Edge, lsite: Point, rsite: Point)
+function createHalfEdge(edge: Edge, lSite: Point, rSite: Point)
 {
-    var newHalfEdge = new HalfEdge(lsite, rsite, edge);
+    var newHalfEdge = new HalfEdge(lSite, rSite, edge);
 
-    if (rsite) 
+    if (rSite) 
     {
-        newHalfEdge.angle = Math.atan2(rsite.Y - lsite.Y, rsite.X - lsite.X);
+        newHalfEdge.angle = Math.atan2(rSite.Y - lSite.Y, rSite.X - lSite.X);
     }
     else
     {
@@ -1390,7 +1371,7 @@ function createHalfEdge(edge: Edge, lsite: Point, rsite: Point)
             vb = edge.end;
         // rhill 2011-05-31: used to call getStartpoint()/getEndpoint(),
         // but for performance purpose, these are expanded in place here.
-        newHalfEdge.angle = edge.left_site === lsite ?
+        newHalfEdge.angle = edge.left_site === lSite ?
             Math.atan2(vb.X-va.X, va.Y-vb.Y) :
             Math.atan2(va.X-vb.X, vb.Y-va.Y);
     }
@@ -1417,14 +1398,10 @@ function prepareHalfedges(region: Region) {
     // get rid of unused halfedges
     // rhill 2011-05-27: Keep it simple, no point here in trying
     // to be fancy: dangling edges are a typically a minority.
-    console.log("HFLENGTH1", region.halfedges.length)
-    console.log("site:", region.site);
+
     while (iHalfedge--) {
         edge = region.halfedges[iHalfedge].edge;
         if (!edge.end || !edge.start) {
-            console.log("edge:")
-            console.log(edge.start)
-            console.log(edge.end)
             region.halfedges.splice(iHalfedge,1);
             }
         }
@@ -1435,7 +1412,6 @@ function prepareHalfedges(region: Region) {
     // Firefox 3.6 was improved marginally, while performance on
     // Opera 11 was penalized marginally.
     region.halfedges.sort(function(a,b){return b.angle-a.angle;});
-    console.log("HFLENGTH2", region.halfedges.length)
     return region.halfedges.length;
 }
 
