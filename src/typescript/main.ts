@@ -5,6 +5,11 @@ const canvas = <HTMLCanvasElement> document.querySelector('#Canvas');
 const button = <HTMLButtonElement>document.querySelector('#button');
 const restartButton = <HTMLButtonElement>document.querySelector('#restartButton');
 
+const basicButton = <HTMLButtonElement>document.querySelector('#basic');
+const smallButton = <HTMLButtonElement>document.querySelector('#small');
+const largeButton = <HTMLButtonElement>document.querySelector('#large');
+const degenerateButton = <HTMLButtonElement>document.querySelector('#degenerate');
+
 //Width and Height of Canvas
 const width = canvas.width;
 const height = canvas.height;
@@ -14,6 +19,11 @@ canvas.addEventListener("click", (e:MouseEvent) => newPoint(e.clientX , e.client
 button.addEventListener("click", sweepLine);
 restartButton.addEventListener("click", restart);
 restartButton.disabled = true;
+
+basicButton.addEventListener("click", function(){loadDataset(0);});
+smallButton.addEventListener("click", function(){loadDataset(1);});
+largeButton.addEventListener("click", function(){loadDataset(2);});
+degenerateButton.addEventListener("click", function(){loadDataset(3);});
 
 //Animation variables
 let clicked = false;
@@ -1145,7 +1155,7 @@ function loop()
 
             button.innerHTML = "Start Algorithm"
             button.removeEventListener("click", toggleActive);
-            button.addEventListener("click", (e:MouseEvent) => sweepLine());
+            button.addEventListener("click", sweepLine);
             button.disabled = true;
         }
     }, 10)
@@ -1521,6 +1531,51 @@ class TreeNode
     {
         this.site = s;
     }
+}
+
+//Controller stuff
+
+function loadDataset(id:number) {
+    
+    pause = true;
+    //reset variables
+    pointList = [];
+    displayedCircleEvents = [];
+    clicked = false;
+    line_position = 0;
+    siteEvents = [];
+    circleEvents = [];
+    beachlineRoot = null;
+    edges = Array<Edge>();
+    regions = Array<Region>();
+
+    //reset view
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeRect(0, 0, width, height);
+
+    setTimeout(function() {
+        switch(id)
+        {
+            case 0:
+                pointList = [new Point(150, 150), new Point(400, 450), new Point(650, 150)]
+                sweepLine();
+                break;
+            case 1:
+                pointList = [new Point(600, 500), new Point(250, 450), new Point(650, 150), new Point(300, 250), new Point(150, 50), new Point(50, 350)]
+                sweepLine();
+                break;
+            case 2:
+                pointList = [new Point(50, 150), new Point(100, 450), new Point(200, 250), new Point(300, 425), new Point(400, 100), new Point(500, 200), new Point(600, 350), new Point(700, 560), new Point(750, 50), new Point(450, 400), new Point(360, 450), new Point(550, 250),
+                            new Point(150, 50), new Point(450, 100), new Point(250, 200), new Point(425, 300), new Point(100, 400), new Point(200, 500), new Point(350, 70), new Point(560, 125), new Point(50, 50), new Point(400, 450), new Point(450, 360), new Point(250, 550)]
+                sweepLine();
+                break;
+            case 3:
+                pointList = [new Point(750, 75), new Point(760, 20), new Point(720, 55), new Point(700, 23), new Point(750, 60), new Point(50, 500),
+                                new Point(700, 100), new Point(740, 70), new Point(730, 65)]
+                sweepLine();
+                break;
+        }
+    }, 100)
 }
 
 function toggleActive() {
