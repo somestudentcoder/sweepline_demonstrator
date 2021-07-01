@@ -3,6 +3,7 @@
 
 const canvas = <HTMLCanvasElement> document.querySelector('#Canvas');
 const button = <HTMLButtonElement>document.querySelector('#button');
+const restartButton = <HTMLButtonElement>document.querySelector('#restartButton');
 
 //Width and Height of Canvas
 const width = canvas.width;
@@ -10,11 +11,14 @@ const height = canvas.height;
 
 //Event Listeners for interaction
 canvas.addEventListener("click", (e:MouseEvent) => newPoint(e.clientX , e.clientY));
-button.addEventListener("click", (e:MouseEvent) => sweepLine());
+button.addEventListener("click", sweepLine);
+restartButton.addEventListener("click", restart);
+restartButton.disabled = true;
 
 //Animation variables
 let clicked = false;
 let line_position = 0;
+let pause = false;
 
 //Fortune algorithm variables
 var siteEvents = [];
@@ -36,30 +40,30 @@ var pointList = [];
 var displayedCircleEvents = [];
 
 //DEBUG FUNCTION
-function printList()
-{
-    printChildren(beachlineRoot, 0)
-}
+// function printList()
+// {
+//     printChildren(beachlineRoot, 0)
+// }
 
-function printChildren(node: TreeNode, layer: number)
-{
-    console.log("Children of", node.site, "at layer ", layer, ":")
-    if(node.left)
-        console.log("LEFT: ", node.left.site)
-    if(node.right)
-        console.log("RIGHT: ", node.right.site)
+// function printChildren(node: TreeNode, layer: number)
+// {
+//     console.log("Children of", node.site, "at layer ", layer, ":")
+//     if(node.left)
+//         console.log("LEFT: ", node.left.site)
+//     if(node.right)
+//         console.log("RIGHT: ", node.right.site)
 
-    console.log("====================================")
+//     console.log("====================================")
 
-    if(node.left)
-    {
-        printChildren(node.left, layer+1)
-    }
-    if(node.right)
-    {
-        printChildren(node.right, layer+1)
-    }
-}
+//     if(node.left)
+//     {
+//         printChildren(node.left, layer+1)
+//     }
+//     if(node.right)
+//     {
+//         printChildren(node.right, layer+1)
+//     }
+// }
 
 //ADDING A NEW POINT
 function newPoint(x, y)
@@ -1120,6 +1124,8 @@ function lessThanWithEpsilon(a,b){return b-a>1e-9;};
 
 function loop()
 {
+    if(pause)return;
+
     setTimeout(function() 
     {
         if (line_position <= height
@@ -1136,6 +1142,11 @@ function loop()
             clipEdges();
             closeCells();
             renderCanvas(false);
+
+            button.innerHTML = "Start Algorithm"
+            button.removeEventListener("click", toggleActive);
+            button.addEventListener("click", (e:MouseEvent) => sweepLine());
+            button.disabled = true;
         }
     }, 10)
 }
@@ -1512,13 +1523,63 @@ class TreeNode
     }
 }
 
+function toggleActive() {
+    if(button.innerHTML == "Pause"){
+        button.innerHTML = "Resume";
+        pause = true;
+    }
+    else{
+        button.innerHTML = "Pause";
+        pause = false;
+        loop()
+    }
+}
+
+function restart() {
+    pause = true;
+
+    setTimeout(function() 
+    {
+        //reset variables
+        pointList = [];
+        displayedCircleEvents = [];
+        clicked = false;
+        line_position = 0;
+        siteEvents = [];
+        circleEvents = [];
+        beachlineRoot = null;
+        edges = Array<Edge>();
+        regions = Array<Region>();
+
+        //reset view
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeRect(0, 0, width, height);
+        //reset button
+        button.innerHTML = "Start Algorithm"
+        button.removeEventListener("click", toggleActive);
+        button.addEventListener("click", sweepLine)
+        button.disabled = false;
+    }, 50)
+}
+
 //MAIN ENTRY POINT FOR ALGORITHM
 function sweepLine()
 {
+    //Don't start before we have points.
+    if(pointList.length == 0)
+    {
+        clicked = false;
+        button.disabled = false;
+        return;
+    }
     //CHECKS
     if(!clicked)
     {
-        button.disabled = true;
+        //Button handling
+        button.removeEventListener("click", sweepLine);
+        button.innerHTML = "Pause";
+        button.addEventListener("click", toggleActive)
+        restartButton.disabled = false;
         clicked = true;
 
         //ALGORITHM INIT
@@ -1529,14 +1590,8 @@ function sweepLine()
             return b.X - a.X;
         });
     }
-    //Don't start before we have points.
-    if(pointList.length == 0)
-    {
-        clicked = false;
-        button.disabled = false;
-        return;
-    }
 
     //ALGORITHM
+    pause = false;
     loop()
 }

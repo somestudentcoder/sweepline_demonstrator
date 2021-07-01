@@ -5,7 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc --build",
-    "dev_build": "tsc --build --watch",
+    "development": "tsc --build --watch",
     "clean": "tsc --build --clean"
   },
   "repository": {
@@ -18,7 +18,7 @@
     "url": "https://github.com/somestudentcoder/sweepline_demonstrator/issues"
   },
   "homepage": "https://github.com/somestudentcoder/sweepline_demonstrator#readme",
-  "dependencies": {
+  "devDependencies": {
     "typescript": "^4.2.3"
   }
 }
