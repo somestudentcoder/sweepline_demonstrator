@@ -2,8 +2,8 @@
 
 ## Description & Usage ##
 
-This is a simple demonstrator that shows how[Fortune's Algorithm]
-(https://link.springer.com/article/10.1007%2FBF01840357) works in practice.
+This is a simple demonstrator that shows how [Fortune's Algorithm](https://link.springer.com/article/10.1007%2FBF01840357)
+works in practice.
 It is possible to place points on a plane and then watch the algorithm build
 the diagram step by step. The execution can be paused at any point in time to
 analyze the procedure. Also 4 predefined datasets are included with which the
@@ -29,10 +29,8 @@ The following command builds and watches the typscript code for changes to recom
 
 ## Credits ##
 
-The algorithm implementation in this demonstrator is largely based on Raymond
-Hill's JavaScript source code -
-https://github.com/gorhill/Javascript-Voronoi. It was adapted to be used with
-this demonstrator and saved a lot of work. Many thanks to Raymond Hill.
+The algorithm implementation in this demonstrator is largely based on [Raymond Hill's JavaScript source code](https://github.com/gorhill/Javascript-Voronoi).
+It was adapted to be used with this demonstrator and saved a lot of work. Many thanks to Raymond Hill.
 
 ## Licence ##
 
