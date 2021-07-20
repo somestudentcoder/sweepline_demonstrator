@@ -14,6 +14,7 @@ to be executed. Any modern browser can be used to run the html file.
 
 To use the demonstrator, simply build the source code (see below) and open
 the index.html in a browser of your choosing (needs to support html5 canvas).
+You can also view the demonstrator under [https://somestudentcoder.github.io/sweepline_demonstrator/](https://somestudentcoder.github.io/sweepline_demonstrator/).
 
 ## Build ##
 
