@@ -51,6 +51,12 @@ const ctx = canvas.getContext('2d');
 ctx.fillStyle = 'rgb(153, 153, 153)';
 ctx.strokeRect(0, 0, width, height);
 
+let textCheck = true;
+ctx.textAlign = "center";
+ctx.font = "35px Arial"
+ctx.fillText("Click to place sites.", width/2, height/2);
+
+
 var pointList = [];
 var displayedCircleEvents = [];
 
@@ -87,6 +93,13 @@ function newPoint(x, y)
     {
         return;
     }
+    if(textCheck)
+    {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeRect(0, 0, width, height);
+        textCheck = false;
+    }
+    
     x = x - canvas.offsetLeft;
     y = y - canvas.offsetTop;
     ctx.fillStyle = 'rgb(0, 0, 0)';
