@@ -1,3 +1,8 @@
+// Portions of this code includes or is based on the implementation by
+// Raymond Hill. The original source code can be found under 
+// https://github.com/gorhill/Javascript-Voronoi
+
+
 //sweepline voronoi diagram.
 //import { Point } from "./point";
 

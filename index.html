@@ -19,7 +19,11 @@
     construct a Voronoi diagram from a set of points. To start the
     demonstration, either add points to the plane below and press
     "Start Algorithm", or try one of the demo diagrams with the 
-    buttons above. 
+    buttons above. The algorithm will start with the sweep line at
+    the very top and handle all events sequentially on its way down.
+    The red points on the plane represent circle events that are 
+    also handled by the sweep line to check for possible Voronoi
+    edges.
 </p>
 
 <canvas id="Canvas" width="800" height="600">
