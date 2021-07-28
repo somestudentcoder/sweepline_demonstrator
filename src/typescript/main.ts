@@ -15,10 +15,6 @@ const smallButton = <HTMLButtonElement>document.querySelector('#small');
 const largeButton = <HTMLButtonElement>document.querySelector('#large');
 const degenerateButton = <HTMLButtonElement>document.querySelector('#degenerate');
 
-//Width and Height of Canvas
-const width = canvas.width;
-const height = canvas.height;
-
 //Event Listeners for interaction
 canvas.addEventListener("click", (e:MouseEvent) => newPoint(e.clientX , e.clientY));
 button.addEventListener("click", sweepLine);
@@ -49,12 +45,12 @@ var regions = Array<Region>();
 const ctx = canvas.getContext('2d');
 
 ctx.fillStyle = 'rgb(153, 153, 153)';
-ctx.strokeRect(0, 0, width, height);
+ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
 let textCheck = true;
 ctx.textAlign = "center";
 ctx.font = "35px Arial"
-ctx.fillText("Click to place sites.", width/2, height/2);
+ctx.fillText("Click to place sites.", canvas.width/2, canvas.height/2);
 
 
 var pointList = [];
@@ -96,17 +92,21 @@ function newPoint(x, y)
     if(textCheck)
     {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeRect(0, 0, width, height);
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
         textCheck = false;
     }
     
     x = x - canvas.offsetLeft;
     y = y - canvas.offsetTop;
+
+    let actual_x = (x / canvas.getBoundingClientRect().width) * canvas.width;
+    let actual_y = (y / canvas.getBoundingClientRect().height) * canvas.height;
+
     ctx.fillStyle = 'rgb(0, 0, 0)';
     ctx.beginPath();
-    ctx.arc(x, y, 3.5, 0, 360, false);
+    ctx.arc(actual_x, actual_y, 3.5, 0, 360, false);
     ctx.fill();
-    pointList.push(new Point(x,y));
+    pointList.push(new Point(actual_x,actual_y));
 }
 
 function handleSite(site: Point)
@@ -807,7 +807,7 @@ function clipEdge(edge: Edge){
     if (r>t0) {t0=r;}
     }
     // right
-    q = width-ax;
+    q = canvas.width-ax;
     if (dx===0 && q<0) {return false;}
     r = q/dx;
     if (dx<0) {
@@ -831,7 +831,7 @@ function clipEdge(edge: Edge){
     if (r>t0) {t0=r;}
     }
     // bottom        
-    q = height-ay;
+    q = canvas.height-ay;
     if (dy===0 && q<0) {return false;}
     r = q/dy;
     if (dy<0) {
@@ -881,9 +881,9 @@ function connectEdge(edge: Edge)
     // make local copy for performance purpose
     var va = edge.start,
         xl = 0,
-        xr = width,
+        xr = canvas.width,
         yt = 0,
-        yb = height,
+        yb = canvas.height,
         lSite = edge.left_site,
         rSite = edge.right_site,
         lx = lSite.X,
@@ -1010,9 +1010,9 @@ function connectEdge(edge: Edge)
 function closeCells()
 {
     var xl = 0.0,
-        xr = width,
+        xr = canvas.width,
         yt = 0.0,
-        yb = height,
+        yb = canvas.height,
         iRegion = regions.length,
         region,
         iLeft,
@@ -1156,7 +1156,7 @@ function loop()
 
     setTimeout(function() 
     {
-        if (line_position <= height
+        if (line_position <= canvas.height
             || siteEvents.length > 0
             || circleEvents.length > 0) 
         {
@@ -1212,7 +1212,7 @@ function checkEvents()
         }
     }
 
-    if(line_position >= height && circleEvents.length > 0)
+    if(line_position >= canvas.height && circleEvents.length > 0)
     {
         let cE = circleEvents.pop();
         removeFromBeachline(cE);
@@ -1233,7 +1233,7 @@ function renderCanvas(helpers: boolean)
     
     //REDRAW BOX
     ctx.strokeStyle = 'rgb(153, 153, 153)';
-    ctx.strokeRect(0, 0, width, height);
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
     //DRAW POINTS
     drawPoints();
 
@@ -1569,7 +1569,7 @@ function loadDataset(id:number) {
 
     //reset view
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeRect(0, 0, width, height);
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
     setTimeout(function() {
         switch(id)
@@ -1626,7 +1626,7 @@ function restart() {
 
         //reset view
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeRect(0, 0, width, height);
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
         //reset button
         button.innerHTML = "Start Algorithm"
         button.removeEventListener("click", toggleActive);

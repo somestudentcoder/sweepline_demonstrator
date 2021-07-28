@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" charset="UTF-8">
     <title>Sweepline Voronoi Diagram</title>
     <link rel= "stylesheet" href="src/css/index.css">
 </head>
@@ -8,6 +8,17 @@
 <body>
 
 <h1>Sweepline Voronoi Diagram (Fortune's Algorithm)</h1>
+
+<canvas id="Canvas" width="800px" height="600px">
+    <p>Your browser doesn't support canvas. This demonstrator can therefore not be displayed. Please use a modern browser to run the demonstrator.</p>
+</canvas>
+
+<div id="spacer"></div>
+
+<button id="button">Start Algorithm</button>
+<button id="restartButton" disabled="true">Reset</button>
+
+<div id="spacer"></div>
 
 <button id="basic">Basic</button>
 <button id="small">Small</button>
@@ -26,12 +37,6 @@
     edges.
 </p>
 
-<canvas id="Canvas" width="800" height="600">
-    <p>Your browser doesn't support canvas. This demonstrator can therefore not be displayed. Please use a modern browser to run the demonstrator.</p>
-</canvas>
-
-<button id="button">Start Algorithm</button>
-<button id="restartButton" disabled="true">Reset</button>
 
 <div id="bottomText">
     This is an open source demonstrator, built by Christopher Oser. The implementation is largely

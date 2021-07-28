@@ -1,13 +1,47 @@
+@media screen and (min-width: 801px) {
+    p {
+        max-width: 790px;
+    }
+
+    #bottomText{
+        font-size: 12px;
+        max-width: 790px;
+    }
+
+    #Canvas{
+        width: 800px;
+        height: 600px;
+    }
+  }
+  
+  @media screen and (max-width: 800px) {
+    p {
+        width: 90%;
+    }
+    #bottomText{
+        font-size: 12px;
+        width: 90%;
+    }
+    #Canvas{
+        width: 95%;
+        height: auto;
+    }
+  }
+
+
 #button{
     width: 100px;
 }
 
-p{
-    width: 800px;
+#bottomText{
+    margin-top: 3vh;
 }
 
-#bottomText{
-    font-size: 12px;
-    width: 800px;
-    margin-top: 30px;
+#spacer{
+    margin-top: 1vh;
 }
+
+/* #Canvas{
+    width: 800px;
+    height: 600px;
+} */
